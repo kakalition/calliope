@@ -1,0 +1,69 @@
+[project]
+name = "calliope"
+version = "0.1.0"
+description = "Calliope — a daily journaling and ESL English-writing coach built on agentkit"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Calliope" }]
+dependencies = [
+    "agentkit",
+    "pydantic-ai>=2.55.0,<3",
+    "sqlmodel>=0.0.22",
+    "typer>=0.15",
+]
+
+[project.optional-dependencies]
+observability = ["opentelemetry-exporter-otlp-proto-http>=1.27"]
+observability-phoenix = ["arize-phoenix>=8"]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[project.scripts]
+calliope = "calliope.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+agentkit = { path = "../agentkit", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/calliope"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+# SQLModel column stubs (`order_by`/`.desc`/`.is_not`) are false positives here.
+[[tool.mypy.overrides]]
+module = "calliope.db.repos"
+disable_error_code = [
+    "arg-type",
+    "attr-defined",
+    "union-attr",
+    "valid-type",
+    "misc",
+    "call-overload",
+    "no-any-return",
+]
