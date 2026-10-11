@@ -17,7 +17,7 @@ class Settings(AgentSettings):
 
     @property
     def db_path(self) -> Path:
-        return self.agent_home / "calliope.db"
+        return self.home / "calliope.db"
 
 
 @lru_cache(maxsize=1)

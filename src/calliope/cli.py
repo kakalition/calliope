@@ -164,7 +164,7 @@ def up(
     from agentkit.supervise import Service, run_all
 
     settings = get_settings()
-    if not (a2a or mcp):
+    if not (a2a or mcp or settings.webui_enabled):
         typer.echo("nothing to run")
         return
     _enable_observability()
@@ -176,7 +176,25 @@ def up(
     if mcp:
         services.append(Service("mcp", lambda: _serve_mcp(settings, runtime)))
     typer.echo("calliope up: " + ", ".join(service.name for service in services))
-    run_all(services)
+    run_all(
+        services,
+        settings=settings,
+        runtime=runtime,
+        webui_answer=_webui_answer(settings, runtime),
+    )
+
+
+def _webui_answer(settings, runtime):
+    """A ``(conversation_id, text) -> ChatResult`` chat callable for the web UI."""
+    from calliope.agents.orchestrator import orchestrator_agent
+
+    async def answer(conversation_id: str, text: str):
+        with repositories(runtime) as repos:
+            deps = build_deps(runtime, repos, model=build_model(settings))
+            runner = ChatRunner(deps, agent=orchestrator_agent, conversation_id=conversation_id)
+            return await runner.send(text)
+
+    return answer
 
 
 def _answer(settings, runtime):

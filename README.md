@@ -16,12 +16,26 @@ is the plumbing.
 
 ---
 
+## Why Calliope
+
+- **A habit, not a chore.** Write a few lines a day; Calliope keeps the streak and
+  the gentle nudge when you miss one.
+- **Feedback that teaches.** Corrected text, categorised fixes, vocabulary to
+  keep, and next steps — graded to your CEFR level, in your own voice.
+- **Durable and private.** Everything runs locally on your machine; entries and
+  feedback are stored in a local database you own.
+- **Reachable everywhere.** CLI, Telegram, MCP, and A2A — plus an operator web UI.
+- **Composable.** Built on [agentkit](https://github.com/kakalition/agentkit), so
+  it inherits durable execution, approvals, audit, and observability.
+
 ## Table of contents
 
+- [Why Calliope](#why-calliope)
 - [What it does](#what-it-does)
 - [Install](#install)
 - [Configure](#configure)
 - [CLI](#cli)
+- [Web UI](#web-ui)
 - [How the agents are organised](#how-the-agents-are-organised)
 - [MCP & A2A](#mcp--a2a)
 - [Persona (`SOUL.md`)](#persona-soulmd)
@@ -54,6 +68,15 @@ Requires **Python 3.11–3.12** and [uv](https://docs.astral.sh/uv/). Calliope
 depends on `agentkit` (installed from the sibling checkout via
 `[tool.uv.sources]`).
 
+### Quickstart
+
+```bash
+export OPENAI_API_KEY=sk-...                      # or put it in .env
+uv run calliope entry "Today I practised English." --mood 4
+uv run calliope critique "I goes to school yesterday."
+uv run calliope up                                # A2A + MCP + web UI (:8787)
+```
+
 ## Configure
 
 | Variable | Default | Purpose |
@@ -62,7 +85,9 @@ depends on `agentkit` (installed from the sibling checkout via
 | `OPENAI_BASE_URL` | – | Any OpenAI-compatible gateway |
 | `MODEL_NAME` | `openai:gpt-4o-mini` | Model id |
 | `OWNER_ID` / `OWNER_NAME` | `owner` / `Writer` | The writer |
-| `AGENT_HOME` | `~/.local/share/calliope` | DB + artifacts |
+| `AGENTKIT_HOME` | `~/.agentkit` | Workspace root (`~/.agentkit/calliope`) |
+| `AGENT_HOME` | `~/.agentkit/calliope` | Explicit home override |
+| `WEBUI_ENABLED` / `WEBUI_HOST` / `WEBUI_PORT` | `true` / `127.0.0.1` / `8787` | Operator web UI |
 | `DEFAULT_ESL_LEVEL` | `B1` | CEFR level used when unspecified |
 | `DAILY_WORD_GOAL` | `150` | Soft daily writing goal |
 | `OBSERVABILITY` | `phoenix` | `phoenix` (local UI) \| `console` \| `otlp` \| `off` |
@@ -79,11 +104,20 @@ calliope stats
 calliope critique "I goes to school yesterday." --level A2
 calliope chat
 calliope soul [--init]
-calliope up                 # one process: A2A + MCP + observability
+calliope up                 # one process: A2A + MCP + web UI + observability
 ```
 
 `entry`, `list` and `stats` are deterministic (no model). `critique` and `chat`
 use the model.
+
+## Web UI
+
+`calliope up` also serves an operator web UI at `http://127.0.0.1:8787` (loopback,
+no auth) for **this agent only**: inspect conversations/chat, usage, audit, A2A
+tasks and durable workflows; manage schedules, edit the SOUL persona, view config
+(secrets masked) and artifacts. Chat runs through the same orchestrator as the
+CLI, so history is shared. Data now lives under `~/.agentkit/calliope` (run
+`agentkit workspace migrate calliope` if upgrading from the old shared home).
 
 ## How the agents are organised
 
@@ -131,7 +165,7 @@ to export to Jaeger/Tempo/Langfuse/a collector.
 
 ```bash
 uv sync --extra dev
-uv run pytest            # tests
+uv run pytest            # 13 tests
 uv run ruff check src tests
 uv run mypy src/calliope
 ```
